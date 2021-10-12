@@ -8,6 +8,8 @@ from PIL import Image, ImageDraw, ImageFont
 from StreamDeck.DeviceManager import DeviceManager
 from StreamDeck.ImageHelpers import PILHelper
 
+import simpleaudio as sa
+
 IMAGES_PATH = path.abspath(path.join(os.path.dirname(__file__), "../images"))
 SOUNDS_PATH = path.abspath(path.join(path.dirname(__file__), "../sounds"))
 FONTS_PATH = path.abspath(path.join(path.dirname(__file__), "../fonts"))
@@ -21,7 +23,7 @@ def render_key_image(deck, icon_filename, font_filename, label_text):
     # afterwards.
     print(icon_filename)
     icon = Image.open(icon_filename)
-    image = PILHelper.create_scaled_image(deck, icon, margins=[0, 0, 20, 0])
+    image = PILHelper.create_scaled_image(deck, icon, margins=[0, 0, 0, 0])
 
     # Load a custom TrueType font and use it to overlay the key index, draw key
     # label onto the image a few pixels from the bottom of the key.
@@ -79,30 +81,40 @@ def update_key_image(deck, key, state):
         # Update requested key with the generated image.
         deck.set_key_image(key, image)
 
+def play_sound(sound_file_path):
+    abs_sound_path = os.path.join(SOUNDS_PATH, sound_file_path)
+    print(abs_sound_path)
+    wave_obj = sa.WaveObject.from_wave_file(abs_sound_path)
+    play_obj = wave_obj.play()
+    play_obj.wait_done()
+    print('played')
 
 # Prints key state change information, updates rhe key image and performs any
 # associated actions when a key is pressed.
 def key_change_callback(deck, key, state):
     # Print new key state
     print("Deck {} Key {} = {}".format(deck.id(), key, state), flush=True)
+    letter = chr(key+97)
+    if state and letter.isalpha():
+        play_sound(f'mama/abc/{letter}.wav')
 
-    # Update the key image based on the new key state.
-    update_key_image(deck, key, state)
+    # # Update the key image based on the new key state.
+    # update_key_image(deck, key, state)
 
-    # Check if the key is changing to the pressed state.
-    if state:
-        key_style = get_key_style(deck, key, state)
+    # # Check if the key is changing to the pressed state.
+    # if state:
+    #     key_style = get_key_style(deck, key, state)
 
-        # When an exit button is pressed, close the application.
-        if key_style["name"] == "exit":
-            # Use a scoped-with on the deck to ensure we're the only thread
-            # using it right now.
-            with deck:
-                # Reset deck, clearing all button images.
-                deck.reset()
+    #     # When an exit button is pressed, close the application.
+    #     if key_style["name"] == "exit":
+    #         # Use a scoped-with on the deck to ensure we're the only thread
+    #         # using it right now.
+    #         with deck:
+    #             # Reset deck, clearing all button images.
+    #             deck.reset()
 
-                # Close deck handle, terminating internal worker threads.
-                deck.close()
+    #             # Close deck handle, terminating internal worker threads.
+    #             deck.close()
 
 
 if __name__ == "__main__":
