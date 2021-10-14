@@ -14,27 +14,69 @@ IMAGES_PATH = path.abspath(path.join(os.path.dirname(__file__), "../images"))
 SOUNDS_PATH = path.abspath(path.join(path.dirname(__file__), "../sounds"))
 FONTS_PATH = path.abspath(path.join(path.dirname(__file__), "../fonts"))
 
+DEFAULT_FONT_PATH = os.path.join(FONTS_PATH, "Roboto-Regular.ttf")
+INACTIVE_KEY_COLOR = 'purple'
+ACTIVE_KEY_COLOR = 'purple'
 
 class LearningBoard:
     deck = None
     current_scene = None
 
-    def __init__(self, deck, scene='abc', brightness=50):
+    scene_to_keyset = {}
+
+    def __init__(self, deck, scene='abc_mama', brightness=50):
         self.deck = deck
+        self.scene_to_keyset = self.get_scene_to_keyset()
         deck.set_brightness(brightness)
         self.set_scene(scene)
         deck.set_key_callback(self.key_change_callback)
     
+    def get_abc_key(self, letter, voice):
+        icon_inactive = os.path.join(IMAGES_PATH, f'abc/{INACTIVE_KEY_COLOR}/{letter}.png')
+        icon_active = os.path.join(IMAGES_PATH, f'abc/{ACTIVE_KEY_COLOR}/{letter}.png')
+        return { 
+            'image_inactive': self.render_key_image(icon_inactive),
+            'image_active': self.render_key_image(icon_active),
+            'sound_path': os.path.join(SOUNDS_PATH, f'{voice}/abc/{letter}.wav'),
+        }
+
+    def get_scene_to_keyset(self):
+        scene_to_keyset = {}
+        scene_to_keyset['abc_mama'] = (
+            [self.get_abc_key(chr(i+97), 'mama') for i in range(0, 26)]
+            + [None, None, None]
+            + [
+                { 
+                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'numbers/purple/001.png')),
+                    'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'numbers/purple/001.png')),
+                    'goto_scene': '123_mama',
+                },
+                { 
+                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'mama.png')),
+                    'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'mama.png')),
+                    'goto_scene': 'abc_mama',
+                },
+                { 
+                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'papa.png')),
+                    'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'papa.png')),
+                    'goto_scene': 'abc_papa',
+                }
+            ]
+        )
+        return scene_to_keyset
+
     def set_scene(self, scene):
+        self.deck.reset()
         self.current_scene = scene
-        for key in range(self.deck.key_count()):
-            self.update_key_image(key, False)
+        for index, key in enumerate(self.scene_to_keyset[self.current_scene]):
+            if key is not None:
+                self.update_key_image(index, key['image_inactive'])
     
     '''
     Generates a custom tile with run-time generated text and custom image via the
     PIL module.
     '''
-    def render_key_image(self, icon_filename, font_filename, label_text):
+    def render_key_image(self, icon_filename, font_filename=DEFAULT_FONT_PATH, label_text=''):
         # Resize the source image asset to best-fit the dimensions of a single key,
         # leaving a margin at the bottom so that we can draw the key title
         # afterwards.
@@ -53,61 +95,38 @@ class LearningBoard:
     Creates a new key image based on the key index, style and current key state
     and updates the image on the StreamDeck.
     '''
-    def update_key_image(self, key, state):
-        if (key > 25):
-            return
-        font =  os.path.join(FONTS_PATH, "Roboto-Regular.ttf")
-        label = ''
-        letter = chr(key+97)
-        print(key)
-        print(letter)
-        icon = os.path.join(IMAGES_PATH, f'abc/purple/{letter}.png')
-        image = self.render_key_image(icon, font, label)
-
+    def update_key_image(self, key_index, image):
         # Use a scoped-with on the deck to ensure we're the only thread using it
         # right now.
         with self.deck:
             # Update requested key with the generated image.
-            self.deck.set_key_image(key, image)
+            self.deck.set_key_image(key_index, image)
 
     def play_sound(self, sound_file_path):
-        abs_sound_path = os.path.join(SOUNDS_PATH, sound_file_path)
-        print(abs_sound_path)
-        wave_obj = sa.WaveObject.from_wave_file(abs_sound_path)
+        print(f'Play sound {sound_file_path}')
+        wave_obj = sa.WaveObject.from_wave_file(sound_file_path)
         play_obj = wave_obj.play()
         play_obj.wait_done()
-        print('played') 
 
 
     '''
     Prints key state change information, updates rhe key image and performs any
     associated actions when a key is pressed.
     '''
-    def key_change_callback(self, deck, key, state):
-        print("Deck {} Key {} = {}".format(self.deck.id(), key, state), flush=True)
-        letter = chr(key+97)
-        if state and letter.isalpha():
-            self.play_sound(f'mama/abc/{letter}.wav')
-
-        # # Update the key image based on the new key state.
-        # update_key_image(deck, key, state)
-
-        # # Check if the key is changing to the pressed state.
-        # if state:
-        #     key_style = get_key_style(deck, key, state)
-
-        #     # When an exit button is pressed, close the application.
-        #     if key_style["name"] == "exit":
-        #         # Use a scoped-with on the deck to ensure we're the only thread
-        #         # using it right now.
-        #         with deck:
-        #             # Reset deck, clearing all button images.
-        #             deck.reset()
-
-        #             # Close deck handle, terminating internal worker threads.
-        #             deck.close()
-
-
+    def key_change_callback(self, deck, key_index, state):
+        print("Deck {} Key {} = {}".format(self.deck.id(), key_index, state), flush=True)
+        keyset = self.scene_to_keyset[self.current_scene]
+        key = keyset[key_index] if len(keyset) > key_index else None
+        if key is None:
+            return
+        
+        if state:
+            self.update_key_image(key_index, key['image_active'])
+            print(key)
+            if 'sound_path' in key:
+                self.play_sound(key['sound_path'])
+        else:
+            self.update_key_image(key_index, key['image_inactive'])
 
 if __name__ == "__main__":
     streamdecks = DeviceManager().enumerate()
