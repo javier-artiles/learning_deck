@@ -56,33 +56,79 @@ class LearningBoard:
         scene_to_keyset = {}
         scene_to_keyset['abc_mama'] = (
             [self.get_abc_key(chr(i+97), 'mama') for i in range(0, 26)]
-            + ([None] * 4)
+            + ([None] * 3)
             + [
                 {
-                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'papa.png')),
+                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'mama.png')),
+                    'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'mama.png')),
+                },
+                {
+                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'papa_dim.png')),
                     'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'papa.png')),
                     'goto_scene': 'abc_papa',
                 },
                 {
-                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'numbers/purple/001.png')),
-                    'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'numbers/purple/001.png')),
+                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, '123/purple/001.png')),
+                    'image_active': self.render_key_image(os.path.join(IMAGES_PATH, '123/purple/001.png')),
                     'goto_scene': '123_mama',
                 },
             ]
         )
-        scene_to_keyset['123_mama'] = (
-            [self.get_123_key(i, 'mama') for i in chain(range(0, 20), range(20, 100 + 1, 10))] # TODO
-            + ([None] * 4)
+        scene_to_keyset['abc_papa'] = (
+            [self.get_abc_key(chr(i+97), 'papa') for i in range(0, 26)]
+            + ([None] * 3)
             + [
+                {
+                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'mama_dim.png')),
+                    'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'mama.png')),
+                    'goto_scene': 'abc_mama',
+                },
                 {
                     'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'papa.png')),
                     'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'papa.png')),
-                    'goto_scene': 'abc_papa',
                 },
                 {
-                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'numbers/purple/001.png')),
-                    'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'numbers/purple/001.png')),
+                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, '123/purple/001.png')),
+                    'image_active': self.render_key_image(os.path.join(IMAGES_PATH, '123/purple/001.png')),
+                    'goto_scene': '123_papa',
+                },
+            ]
+        )
+        scene_to_keyset['123_mama'] = (
+            [self.get_123_key(i, 'mama') for i in chain(range(0, 20), range(20, 100 + 1, 10))]
+            + [
+                {
+                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'mama.png')),
+                    'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'mama.png')),
+                },
+                {
+                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'papa_dim.png')),
+                    'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'papa.png')),
+                    'goto_scene': '123_papa',
+                },
+                {
+                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'abc/purple/a.png')),
+                    'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'abc/purple/a.png')),
+                    'goto_scene': 'abc_mama',
+                },
+            ]
+        )
+        scene_to_keyset['123_papa'] = (
+            [self.get_123_key(i, 'papa') for i in chain(range(0, 20), range(20, 100 + 1, 10))]
+            + [
+                {
+                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'mama_dim.png')),
+                    'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'mama.png')),
                     'goto_scene': '123_mama',
+                },
+                {
+                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'papa.png')),
+                    'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'papa.png')),
+                },
+                {
+                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'abc/purple/a.png')),
+                    'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'abc/purple/a.png')),
+                    'goto_scene': 'abc_papa',
                 },
             ]
         )
@@ -105,7 +151,7 @@ class LearningBoard:
         # afterwards.
         icon = Image.open(icon_filename)
         image = PILHelper.create_scaled_image(self.deck, icon, margins=[0, 0, 0, 0])
-
+        
         # Load a custom TrueType font and use it to overlay the key index, draw key
         # label onto the image a few pixels from the bottom of the key.
         draw = ImageDraw.Draw(image)
