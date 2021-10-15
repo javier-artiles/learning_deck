@@ -10,13 +10,15 @@ from StreamDeck.ImageHelpers import PILHelper
 
 import simpleaudio as sa
 
+from itertools import chain
+
 IMAGES_PATH = path.abspath(path.join(os.path.dirname(__file__), "../images"))
 SOUNDS_PATH = path.abspath(path.join(path.dirname(__file__), "../sounds"))
 FONTS_PATH = path.abspath(path.join(path.dirname(__file__), "../fonts"))
 
 DEFAULT_FONT_PATH = os.path.join(FONTS_PATH, "Roboto-Regular.ttf")
 INACTIVE_KEY_COLOR = 'purple'
-ACTIVE_KEY_COLOR = 'purple'
+ACTIVE_KEY_COLOR = 'red'
 
 class LearningBoard:
     deck = None
@@ -30,37 +32,58 @@ class LearningBoard:
         deck.set_brightness(brightness)
         self.set_scene(scene)
         deck.set_key_callback(self.key_change_callback)
-    
+
     def get_abc_key(self, letter, voice):
         icon_inactive = os.path.join(IMAGES_PATH, f'abc/{INACTIVE_KEY_COLOR}/{letter}.png')
         icon_active = os.path.join(IMAGES_PATH, f'abc/{ACTIVE_KEY_COLOR}/{letter}.png')
-        return { 
+        return {
             'image_inactive': self.render_key_image(icon_inactive),
             'image_active': self.render_key_image(icon_active),
             'sound_path': os.path.join(SOUNDS_PATH, f'{voice}/abc/{letter}.wav'),
+        }
+
+    def get_123_key(self, number, voice):
+        padded_number = f'{number:03}'
+        icon_inactive = os.path.join(IMAGES_PATH, f'123/{INACTIVE_KEY_COLOR}/{padded_number}.png')
+        icon_active = os.path.join(IMAGES_PATH, f'123/{ACTIVE_KEY_COLOR}/{padded_number}.png')
+        return {
+            'image_inactive': self.render_key_image(icon_inactive),
+            'image_active': self.render_key_image(icon_active),
+            'sound_path': os.path.join(SOUNDS_PATH, f'{voice}/123/{padded_number}.wav'),
         }
 
     def get_scene_to_keyset(self):
         scene_to_keyset = {}
         scene_to_keyset['abc_mama'] = (
             [self.get_abc_key(chr(i+97), 'mama') for i in range(0, 26)]
-            + [None, None, None]
+            + ([None] * 4)
             + [
-                { 
+                {
+                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'papa.png')),
+                    'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'papa.png')),
+                    'goto_scene': 'abc_papa',
+                },
+                {
                     'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'numbers/purple/001.png')),
                     'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'numbers/purple/001.png')),
                     'goto_scene': '123_mama',
                 },
-                { 
-                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'mama.png')),
-                    'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'mama.png')),
-                    'goto_scene': 'abc_mama',
-                },
-                { 
+            ]
+        )
+        scene_to_keyset['123_mama'] = (
+            [self.get_123_key(i, 'mama') for i in chain(range(0, 20), range(20, 100 + 1, 10))] # TODO
+            + ([None] * 4)
+            + [
+                {
                     'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'papa.png')),
                     'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'papa.png')),
                     'goto_scene': 'abc_papa',
-                }
+                },
+                {
+                    'image_inactive': self.render_key_image(os.path.join(IMAGES_PATH, 'numbers/purple/001.png')),
+                    'image_active': self.render_key_image(os.path.join(IMAGES_PATH, 'numbers/purple/001.png')),
+                    'goto_scene': '123_mama',
+                },
             ]
         )
         return scene_to_keyset
@@ -71,7 +94,7 @@ class LearningBoard:
         for index, key in enumerate(self.scene_to_keyset[self.current_scene]):
             if key is not None:
                 self.update_key_image(index, key['image_inactive'])
-    
+
     '''
     Generates a custom tile with run-time generated text and custom image via the
     PIL module.
@@ -119,12 +142,14 @@ class LearningBoard:
         key = keyset[key_index] if len(keyset) > key_index else None
         if key is None:
             return
-        
+
         if state:
             self.update_key_image(key_index, key['image_active'])
             print(key)
             if 'sound_path' in key:
                 self.play_sound(key['sound_path'])
+            if 'goto_scene' in key:
+                self.set_scene(key['goto_scene'])
         else:
             self.update_key_image(key_index, key['image_inactive'])
 
