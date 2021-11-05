@@ -26,7 +26,7 @@ class LearningBoard:
 
     scene_to_keyset = {}
 
-    def __init__(self, deck, scene='abc_mama', brightness=50):
+    def __init__(self, deck, scene='abc_mama', brightness=30):
         self.deck = deck
         self.scene_to_keyset = self.get_scene_to_keyset()
         deck.set_brightness(brightness)
