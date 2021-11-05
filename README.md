@@ -83,4 +83,6 @@ How to do this should be pretty obvious from the layout of the project.
 
 ## Demo
 
-Coming up soon
+Quick demo here. Note that the icon colors are much more vivid in reality, but I'm recording at night without natural light because... parenthood.
+
+[![Learning Deck demo video](http://img.youtube.com/vi/0rF_9de8I4Q/0.jpg)](https://www.youtube.com/watch?v=0rF_9de8I4Q "Learning Deck (Raspberry Pi + Stream Deck")
